@@ -1,9 +1,9 @@
 (function() {
     'use strict';
 
-    console.log('Tosca Log Enhancer v7 loaded');
+    console.log('Tosca Log Enhancer v8 loaded');
     let isProcessing = false;
-    let lastContent = '';
+    let originalContent = '';
     let updateTimeout = null;
     let isEnhancerEnabled = true;
 
@@ -38,14 +38,18 @@
     // Check storage for initial state
     chrome.storage.sync.get(['enhancerEnabled'], function(result) {
         isEnhancerEnabled = result.enhancerEnabled !== false;
+        // Trigger initial enhancement
+        setTimeout(initLogEnhancer, 1000);
     });
 
     // Listen for toggle messages
     chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
         if (request.action === 'toggleEnhancer') {
             isEnhancerEnabled = request.enabled;
+            
             if (isEnhancerEnabled) {
-                enhanceLogs();
+                // Ensure we re-enhance logs when turning back on
+                enhanceLogs(true);
             } else {
                 resetLogContainer();
             }
@@ -68,16 +72,17 @@
     function resetLogContainer() {
         const logContainer = findLogContainer();
         if (logContainer) {
-            // Restore original content if enhanced
+            // Remove enhanced container and restore original content
             const enhancedContainer = logContainer.querySelector('.tosca-log-container');
             if (enhancedContainer) {
-                logContainer.innerHTML = lastContent;
+                // Restore original content without extra newlines
+                logContainer.innerHTML = originalContent.trim();
             }
         }
     }
 
-    function enhanceLogs() {
-        if (!isEnhancerEnabled) return;
+    function enhanceLogs(forceEnhance = false) {
+        if (!isEnhancerEnabled && !forceEnhance) return;
         if (isProcessing) return;
         isProcessing = true;
 
@@ -87,12 +92,12 @@
             return;
         }
 
-        const currentContent = logContainer.innerText;
-        if (currentContent === lastContent) {
-            isProcessing = false;
-            return;
+        // Store original content if not already stored
+        if (!originalContent) {
+            originalContent = logContainer.innerHTML;
         }
-        lastContent = currentContent;
+
+        const currentContent = logContainer.innerText;
 
         // Add style to document (only once)
         if (!document.getElementById('tosca-log-styles')) {
@@ -115,7 +120,7 @@
             }
 
             return `<div class="log-line ${cssClass}">${line}</div>`;
-        });
+        }).filter(line => line !== '');
 
         let enhancedContainer = logContainer.querySelector('.tosca-log-container');
         if (!enhancedContainer) {
@@ -125,10 +130,9 @@
 
         enhancedContainer.innerHTML = processedLines.join('');
 
-        if (!logContainer.querySelector('.tosca-log-container')) {
-            logContainer.innerHTML = '';
-            logContainer.appendChild(enhancedContainer);
-        }
+        // Replace container content
+        logContainer.innerHTML = '';
+        logContainer.appendChild(enhancedContainer);
 
         isProcessing = false;
     }
@@ -148,8 +152,10 @@
     const debouncedEnhance = debounce(enhanceLogs, 500);
 
     function initLogEnhancer() {
-        // Initial enhancement
-        setTimeout(enhanceLogs, 1000);
+        // Initial enhancement if enabled
+        if (isEnhancerEnabled) {
+            enhanceLogs();
+        }
 
         // Set up MutationObserver with reduced sensitivity
         const observer = new MutationObserver((mutations) => {
