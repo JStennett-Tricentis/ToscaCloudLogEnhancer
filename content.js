@@ -4,10 +4,9 @@
 	console.log('Tosca Log Enhancer v9 - Performance Optimized');
 	let isProcessing = false;
 	let originalContent = '';
-	let updateTimeout = null;
 	let isEnhancerEnabled = true;
 	let lastEnhancedContent = '';
-	const ENHANCEMENT_INTERVAL = 5000; // 5 seconds, matching log update frequency
+	const ENHANCEMENT_INTERVAL = 4000;
 	let lastEnhancementTime = 0;
 
 	const styles = `
