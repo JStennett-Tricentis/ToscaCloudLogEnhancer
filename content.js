@@ -1,13 +1,16 @@
 (function() {
-    'use strict';
+	'use strict';
 
-    console.log('Tosca Log Enhancer v8 loaded');
-    let isProcessing = false;
-    let originalContent = '';
-    let updateTimeout = null;
-    let isEnhancerEnabled = true;
+	console.log('Tosca Log Enhancer v9 - Performance Optimized');
+	let isProcessing = false;
+	let originalContent = '';
+	let updateTimeout = null;
+	let isEnhancerEnabled = true;
+	let lastEnhancedContent = '';
+	const ENHANCEMENT_INTERVAL = 5000; // 5 seconds, matching log update frequency
+	let lastEnhancementTime = 0;
 
-    const styles = `
+	const styles = `
         .tosca-log-container {
             font-family: 'Consolas', 'Courier New', monospace;
             font-size: 12px;
@@ -35,155 +38,163 @@
         }
     `;
 
-    // Check storage for initial state
-    chrome.storage.sync.get(['enhancerEnabled'], function(result) {
-        isEnhancerEnabled = result.enhancerEnabled !== false;
-        // Trigger initial enhancement
-        setTimeout(initLogEnhancer, 1000);
-    });
+	// Check storage for initial state
+	chrome.storage.sync.get(['enhancerEnabled'], function(result) {
+		isEnhancerEnabled = result.enhancerEnabled !== false;
+		// Trigger initial enhancement with a slight delay
+		setTimeout(initLogEnhancer, 1500);
+	});
 
-    // Listen for toggle messages
-    chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
-        if (request.action === 'toggleEnhancer') {
-            isEnhancerEnabled = request.enabled;
-            
-            if (isEnhancerEnabled) {
-                // Ensure we re-enhance logs when turning back on
-                enhanceLogs(true);
-            } else {
-                resetLogContainer();
-            }
-        }
-    });
+	// Listen for toggle messages
+	chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
+		if (request.action === 'toggleEnhancer') {
+			isEnhancerEnabled = request.enabled;
 
-    function findLogContainer() {
-        const selectors = ['.MuiBox-root.css-0', '[class*="MuiBox"][class*="css-"]'];
-        for (const selector of selectors) {
-            const elements = document.querySelectorAll(selector);
-            for (const element of elements) {
-                if (element.textContent.includes('[INF][TBox]')) {
-                    return element;
-                }
-            }
-        }
-        return null;
-    }
+			if (isEnhancerEnabled) {
+				// Force re-enhance logs when turning back on
+				enhanceLogs(true);
+			} else {
+				resetLogContainer();
+			}
+		}
+	});
 
-    function resetLogContainer() {
-        const logContainer = findLogContainer();
-        if (logContainer) {
-            // Remove enhanced container and restore original content
-            const enhancedContainer = logContainer.querySelector('.tosca-log-container');
-            if (enhancedContainer) {
-                // Restore original content without extra newlines
-                logContainer.innerHTML = originalContent.trim();
-            }
-        }
-    }
+	function findLogContainer() {
+		const selectors = ['.MuiBox-root.css-0', '[class*="MuiBox"][class*="css-"]'];
+		for (const selector of selectors) {
+			const elements = document.querySelectorAll(selector);
+			for (const element of elements) {
+				if (element.textContent.includes('[INF][TBox]')) {
+					return element;
+				}
+			}
+		}
+		return null;
+	}
 
-    function enhanceLogs(forceEnhance = false) {
-        if (!isEnhancerEnabled && !forceEnhance) return;
-        if (isProcessing) return;
-        isProcessing = true;
+	function resetLogContainer() {
+		const logContainer = findLogContainer();
+		if (logContainer) {
+			// Remove enhanced container and restore original content
+			const enhancedContainer = logContainer.querySelector('.tosca-log-container');
+			if (enhancedContainer) {
+				// Restore original content without extra newlines
+				logContainer.innerHTML = originalContent.trim();
+			}
+		}
+	}
 
-        const logContainer = findLogContainer();
-        if (!logContainer) {
-            isProcessing = false;
-            return;
-        }
+	function enhanceLogs(forceEnhance = false) {
+		const currentTime = Date.now();
 
-        // Store original content if not already stored
-        if (!originalContent) {
-            originalContent = logContainer.innerHTML;
-        }
+		// Prevent too frequent updates
+		if (!forceEnhance &&
+			(currentTime - lastEnhancementTime < ENHANCEMENT_INTERVAL) &&
+			(!isEnhancerEnabled)) {
+			return;
+		}
 
-        const currentContent = logContainer.innerText;
+		if (isProcessing) return;
+		isProcessing = true;
 
-        // Add style to document (only once)
-        if (!document.getElementById('tosca-log-styles')) {
-            const styleElement = document.createElement('style');
-            styleElement.id = 'tosca-log-styles';
-            styleElement.textContent = styles;
-            document.head.appendChild(styleElement);
-        }
+		const logContainer = findLogContainer();
+		if (!logContainer) {
+			isProcessing = false;
+			return;
+		}
 
-        const logLines = currentContent.split('\n');
+		// Store original content if not already stored
+		if (!originalContent) {
+			originalContent = logContainer.innerHTML;
+		}
 
-        const processedLines = logLines.map(line => {
-            if (!line.trim()) return '';
+		const currentContent = logContainer.innerText;
 
-            let cssClass = 'info';
-            if (line.includes('[Succeeded]')) {
-                cssClass = 'succeeded';
-            } else if (line.includes('[Failed]')) {
-                cssClass = 'failed';
-            }
+		// Prevent unnecessary re-rendering
+		if (!forceEnhance && currentContent === lastEnhancedContent) {
+			isProcessing = false;
+			return;
+		}
 
-            return `<div class="log-line ${cssClass}">${line}</div>`;
-        }).filter(line => line !== '');
+		// Add style to document (only once)
+		if (!document.getElementById('tosca-log-styles')) {
+			const styleElement = document.createElement('style');
+			styleElement.id = 'tosca-log-styles';
+			styleElement.textContent = styles;
+			document.head.appendChild(styleElement);
+		}
 
-        let enhancedContainer = logContainer.querySelector('.tosca-log-container');
-        if (!enhancedContainer) {
-            enhancedContainer = document.createElement('div');
-            enhancedContainer.className = 'tosca-log-container';
-        }
+		const logLines = currentContent.split('\n');
 
-        enhancedContainer.innerHTML = processedLines.join('');
+		const processedLines = logLines.map(line => {
+			if (!line.trim()) return '';
 
-        // Replace container content
-        logContainer.innerHTML = '';
-        logContainer.appendChild(enhancedContainer);
+			let cssClass = 'info';
+			if (line.includes('[Succeeded]')) {
+				cssClass = 'succeeded';
+			} else if (line.includes('[Failed]')) {
+				cssClass = 'failed';
+			}
 
-        isProcessing = false;
-    }
+			return `<div class="log-line ${cssClass}">${line}</div>`;
+		}).filter(line => line !== '');
 
-    function debounce(func, wait) {
-        return function executedFunction(...args) {
-            if (updateTimeout) {
-                clearTimeout(updateTimeout);
-            }
-            updateTimeout = setTimeout(() => {
-                func.apply(this, args);
-                updateTimeout = null;
-            }, wait);
-        };
-    }
+		let enhancedContainer = logContainer.querySelector('.tosca-log-container');
+		if (!enhancedContainer) {
+			enhancedContainer = document.createElement('div');
+			enhancedContainer.className = 'tosca-log-container';
+		}
 
-    const debouncedEnhance = debounce(enhanceLogs, 500);
+		enhancedContainer.innerHTML = processedLines.join('');
 
-    function initLogEnhancer() {
-        // Initial enhancement if enabled
-        if (isEnhancerEnabled) {
-            enhanceLogs();
-        }
+		// Replace container content
+		logContainer.innerHTML = '';
+		logContainer.appendChild(enhancedContainer);
 
-        // Set up MutationObserver with reduced sensitivity
-        const observer = new MutationObserver((mutations) => {
-            const hasRelevantChanges = mutations.some(mutation => {
-                if (mutation.type === 'childList') {
-                    return Array.from(mutation.addedNodes).some(node =>
-                        node.textContent && node.textContent.includes('[INF][TBox]')
-                    );
-                }
-                return false;
-            });
+		// Update tracking variables
+		lastEnhancedContent = currentContent;
+		lastEnhancementTime = currentTime;
+		isProcessing = false;
+	}
 
-            if (hasRelevantChanges && !isProcessing && isEnhancerEnabled) {
-                debouncedEnhance();
-            }
-        });
+	function initLogEnhancer() {
+		// Initial enhancement if enabled
+		if (isEnhancerEnabled) {
+			enhanceLogs(true);
+		}
 
-        observer.observe(document.body, {
-            childList: true,
-            subtree: true,
-            characterData: false
-        });
-    }
+		// Set up MutationObserver with reduced sensitivity
+		const observer = new MutationObserver((mutations) => {
+			const currentTime = Date.now();
 
-    // Run the enhancer
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initLogEnhancer);
-    } else {
-        initLogEnhancer();
-    }
+			// Only check for updates if enough time has passed
+			if (currentTime - lastEnhancementTime >= ENHANCEMENT_INTERVAL) {
+				const hasRelevantChanges = mutations.some(mutation => {
+					if (mutation.type === 'childList') {
+						return Array.from(mutation.addedNodes).some(node =>
+							node.textContent && node.textContent.includes('[INF][TBox]')
+						);
+					}
+					return false;
+				});
+
+				if (hasRelevantChanges && !isProcessing && isEnhancerEnabled) {
+					enhanceLogs();
+				}
+			}
+		});
+
+		observer.observe(document.body, {
+			childList: true,
+			subtree: true,
+			characterData: false
+		});
+	}
+
+	// Run the enhancer
+	if (document.readyState === 'loading') {
+		document.addEventListener('DOMContentLoaded', initLogEnhancer);
+	} else {
+		initLogEnhancer();
+	}
 })();
