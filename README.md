@@ -53,7 +53,7 @@ Tosca Cloud Log Enhancer is a Chrome extension designed to improve the readabili
 
 ### Project Structure
 
-```
+```bash
 ToscaCloudLogEnhancer/
 │
 ├── manifest.json        # Extension configuration
