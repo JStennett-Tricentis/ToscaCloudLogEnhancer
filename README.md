@@ -38,12 +38,12 @@ Tosca Cloud Log Enhancer is a Chrome extension designed to improve the readabili
 2. **Open Chrome Extension Management**
    - Open the Chrome Browser.
    - Navigate to `chrome://extensions/`.
-   - Enable "Developer mode" (toggle switch in top right).
+   - Enable "Developer mode" (toggle in top right).
 
     ![Devloper mode toggle](./src/images/developerMode.png)
 
 3. **Load Unpacked Extension**
-   - Click "Load unpacked".
+   - Click "Load unpacked" (button in top left).
 
     ![Load unpacked button](./src/images/loadUnpacked.png)
 
