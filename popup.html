@@ -2,25 +2,19 @@
 <html>
 <head>
   <title>Tosca Log Enhancer</title>
-  <style>
-    body {
-      width: 300px;
-      padding: 10px;
-      font-family: Arial, sans-serif;
-    }
-    .container {
-      text-align: center;
-    }
-    p {
-      font-size: 14px;
-      color: #666;
-    }
-  </style>
+  <link rel="stylesheet" href="popup.css">
 </head>
 <body>
   <div class="container">
     <h1>Tosca Log Enhancer</h1>
-    <p>Automatically enhances Tosca Cloud log readability</p>
+    <div class="toggle-container">
+      <label class="switch">
+        <input type="checkbox" id="enhancerToggle">
+        <span class="slider round"></span>
+      </label>
+      <span id="toggleStatus">Enabled</span>
+    </div>
   </div>
+  <script src="popup.js"></script>
 </body>
 </html>

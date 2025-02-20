@@ -1,17 +1,17 @@
 (function() {
     'use strict';
 
-    console.log('Tosca Log Enhancer v6 loaded');
+    console.log('Tosca Log Enhancer v7 loaded');
     let isProcessing = false;
     let lastContent = '';
     let updateTimeout = null;
+    let isEnhancerEnabled = true;
 
     const styles = `
         .tosca-log-container {
             font-family: 'Consolas', 'Courier New', monospace;
             font-size: 12px;
             line-height: 1.5;
-
             white-space: pre-wrap;
             word-break: break-word;
             min-width: 1700px;
@@ -35,6 +35,23 @@
         }
     `;
 
+    // Check storage for initial state
+    chrome.storage.sync.get(['enhancerEnabled'], function(result) {
+        isEnhancerEnabled = result.enhancerEnabled !== false;
+    });
+
+    // Listen for toggle messages
+    chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
+        if (request.action === 'toggleEnhancer') {
+            isEnhancerEnabled = request.enabled;
+            if (isEnhancerEnabled) {
+                enhanceLogs();
+            } else {
+                resetLogContainer();
+            }
+        }
+    });
+
     function findLogContainer() {
         const selectors = ['.MuiBox-root.css-0', '[class*="MuiBox"][class*="css-"]'];
         for (const selector of selectors) {
@@ -48,7 +65,19 @@
         return null;
     }
 
+    function resetLogContainer() {
+        const logContainer = findLogContainer();
+        if (logContainer) {
+            // Restore original content if enhanced
+            const enhancedContainer = logContainer.querySelector('.tosca-log-container');
+            if (enhancedContainer) {
+                logContainer.innerHTML = lastContent;
+            }
+        }
+    }
+
     function enhanceLogs() {
+        if (!isEnhancerEnabled) return;
         if (isProcessing) return;
         isProcessing = true;
 
@@ -133,7 +162,7 @@
                 return false;
             });
 
-            if (hasRelevantChanges && !isProcessing) {
+            if (hasRelevantChanges && !isProcessing && isEnhancerEnabled) {
                 debouncedEnhance();
             }
         });

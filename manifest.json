@@ -4,7 +4,8 @@
   "version": "1.0",
   "description": "Enhance readability of Tosca Cloud logs",
   "permissions": [
-    "activeTab"
+    "activeTab",
+    "storage"
   ],
   "content_scripts": [
     {
