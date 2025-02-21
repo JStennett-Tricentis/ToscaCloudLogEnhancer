@@ -19,6 +19,7 @@
             min-width: 1700px;
             max-width: 2000px;
             margin: 0 auto;
+			padding: 0 0 10px 0;
         }
         .log-line {
             display: block;
