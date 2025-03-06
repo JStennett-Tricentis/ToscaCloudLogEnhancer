@@ -1,34 +1,35 @@
 {
-    "manifest_version": 2,
-    "name": "Tosca Cloud Log Enhancer",
-    "version": "1.0",
-    "description": "Enhance readability of Tosca Cloud logs",
-    "permissions": [
-        "activeTab",
-        "storage",
-        "https://*.tricentis.com/*"
-    ],
-    "content_scripts": [
-        {
-            "matches": [
-                "https://*.tricentis.com/_portal/space/*/runs/*/results/*"
-            ],
-            "js": [
-                "content.js"
-            ]
-        }
-    ],
-    "browser_action": {
-        "default_popup": "popup.html",
-        "default_icon": {
-            "16": "icons/icon16.png",
-            "48": "icons/icon48.png",
-            "128": "icons/icon128.png"
-        }
-    },
-    "icons": {
-        "16": "icons/icon16.png",
-        "48": "icons/icon48.png",
-        "128": "icons/icon128.png"
-    }
+	"manifest_version": 2,
+	"name": "Tosca Cloud Log Enhancer",
+	"version": "1.0.0",
+	"description": "Enhance readability of Tosca Cloud logs with color-coded formatting",
+	"author": "Tricentis",
+	"permissions": [
+		"activeTab",
+		"storage",
+		"https://*.tricentis.com/*"
+	],
+	"content_scripts": [
+		{
+			"matches": [
+				"https://*.tricentis.com/_portal/space/*/runs/*/results/*"
+			],
+			"js": [
+				"content.js"
+			]
+		}
+	],
+	"browser_action": {
+		"default_popup": "popup.html",
+		"default_icon": {
+			"16": "icons/icon16.png",
+			"48": "icons/icon48.png",
+			"128": "icons/icon128.png"
+		}
+	},
+	"icons": {
+		"16": "icons/icon16.png",
+		"48": "icons/icon48.png",
+		"128": "icons/icon128.png"
+	}
 }

@@ -1,20 +1,26 @@
 <!DOCTYPE html>
-<html>
-	<head>
-		<title>Tosca Log Enhancer</title>
-		<link rel="stylesheet" href="popup.css">
-	</head>
-	<body>
-		<div class="container">
-			<h1>Tosca Log Enhancer</h1>
-			<div class="toggle-container">
-				<label class="switch">
-					<input type="checkbox" id="enhancerToggle">
-					<span class="slider round"></span>
-				</label>
-				<span id="toggleStatus">Enabled</span>
-			</div>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Tosca Log Enhancer</title>
+	<link rel="stylesheet" href="popup.css">
+</head>
+
+<body>
+	<div class="container">
+		<h1>Tosca Log Enhancer</h1>
+		<div class="toggle-container">
+			<label class="switch" for="enhancerToggle" aria-label="Enable or disable log enhancement">
+				<input type="checkbox" id="enhancerToggle" aria-describedby="toggleStatus">
+				<span class="slider round"></span>
+			</label>
+			<span id="toggleStatus" role="status">Enabled</span>
 		</div>
-		<script src="popup.js"></script>
-	</body>
+		<div id="status" role="alert" aria-live="polite"></div>
+	</div>
+	<script src="popup.js"></script>
+</body>
+
 </html>

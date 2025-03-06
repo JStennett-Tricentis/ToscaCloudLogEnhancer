@@ -12,7 +12,9 @@
 			"matches": [
 				"https://*.tricentis.com/_portal/space/*/runs/*/results/*"
 			],
-			"js": ["content.js"]
+			"js": [
+				"content.js"
+			]
 		}
 	],
 	"action": {
